@@ -26,17 +26,26 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final List<String> allowedOrigins;
+    private final List<String> allowedOriginPatterns;
 
     public SecurityConfig(
             RestAuthenticationEntryPoint restAuthenticationEntryPoint,
             @Value(
-                            "${APP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}")
+                            "${APP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://*.up.railway.app}")
                     String allowedOrigins) {
         this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
-        this.allowedOrigins =
+        List<String> parsedOrigins =
                 Arrays.stream(allowedOrigins.split(","))
                         .map(String::trim)
                         .filter(origin -> !origin.isEmpty())
+                        .collect(Collectors.toList());
+        this.allowedOrigins =
+                parsedOrigins.stream()
+                        .filter(origin -> !origin.contains("*"))
+                        .collect(Collectors.toList());
+        this.allowedOriginPatterns =
+                parsedOrigins.stream()
+                        .filter(origin -> origin.contains("*"))
                         .collect(Collectors.toList());
     }
 
@@ -95,6 +104,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
