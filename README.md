@@ -1,1 +1,4 @@
 # whop
+```sh
+make start
+```
